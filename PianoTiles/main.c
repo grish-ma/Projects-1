@@ -35,13 +35,13 @@ int main() {
   lcd_init();
   ISR(TIMER1_COMPA_vect);
   timer1_init();
-  
+
   // Initialize any variables here:
-  uint8_t pressed; // 0 = no button pressed, 1 = button pressed  
+  //uint8_t pressed; // 0 = no button pressed, 1 = button pressed  
   uint8_t state = STALL; 
 
   // Enable Pull up resistors on D3 and D5 for buttons
-  PORTD |= (1 << PD3|1<<PD5);
+  PORTC |= (1 << PC2|1<<PC4);
 
   // Set up otput for buzzer
 
@@ -68,63 +68,89 @@ int main() {
   tens = 0;
   tenths = 0;
   int start = 0;
-  int array_count = 0;
-  
+  int array_count;
+  int index = 0;
+
   while(1){
     // Check for state
-    if (finished == 1 )
-    {
-      state = END;
-    }
-    
+    // if (finished())
+    // {
+    //   state = END;
+    // }
+
     if(state == STALL)
     {
-      if (correct()){
+      if (correct(blocks[index])){
         state = SHIFT;
+        index++;
+        _delay_ms(500);
       }
       else{
         // Display the blocks.
         // array_count can increment until 42
         // j can increment until 16
-        int j = 0;
-        for (array_count = start; j < start+16; j++)
+        for ( array_count = start; array_count < start+16; array_count++)
         {
+          uint8_t col = array_count-start;
           if (array_count < 42)
           {
-            lcd_moveto(blocks[array_count], j);
+            lcd_moveto(blocks[array_count], col);
             lcd_stringout(".");
           }
           else
           {
-            lcd_moveto(0, j);
+            lcd_moveto(blocks[array_count], col);
             lcd_stringout(" ");
           }
-          array_count++;
-        }
-
-        // check if finished
-        if (start == 42){
-          finished = 1;
         }
       }
     }
     else if (state == SHIFT)
     {
+
       // Move the blocks down.
       start++;
       // Play the note.
-
-      state == STALL;
+      state = STALL;
+      lcd_writecommand(1);
     }
     else if (state == END)
     {
-      
+
     }
-    
+
   }
   return 0;
 }
 // **************************** MAIN END *******************************
+
+int correct(int position)
+{
+    // _delay_ms(3000);
+    // return 1;
+    char x = PINC;
+    if (position == 0)
+    {
+        // left button should be pressed
+        // PC2
+        if((x & ((1<<PC2)|(1<<PC4))) == (1<<PC4))
+        {
+            return 1;
+        }
+        return 0;
+    }
+    else
+    {
+        // right button should be pressed
+        // PC4
+        if((x & ((1<<PC2)|(1<<PC4))) == (1<<PC2))
+        {
+            return 1;
+        }
+        return 0;
+    }
+
+}
 
 // **************************** TIMER1_INIT START *******************************
 void timer1_init(void)
